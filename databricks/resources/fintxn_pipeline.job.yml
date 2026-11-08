@@ -1,0 +1,88 @@
+# One Databricks Job = the full DAG. Every task runs the same wheel entry point
+# (`fintxn --env databricks <command>`) on serverless compute.
+resources:
+  jobs:
+    fintxn_pipeline:
+      name: fintxn-pipeline-${bundle.target}
+      max_concurrent_runs: 1
+      timeout_seconds: 7200
+      tags:
+        project: financial-txn-etl-fraud-detection
+      environments:
+        - environment_key: fintxn_env
+          spec:
+            client: "2"
+            dependencies:
+              - ../../dist/*.whl
+
+      tasks:
+        - task_key: setup_uc
+          environment_key: fintxn_env
+          python_wheel_task:
+            package_name: fintxn
+            entry_point: fintxn
+            parameters: ["--env", "databricks", "setup-uc"]
+
+        - task_key: generate
+          depends_on: [{ task_key: setup_uc }]
+          environment_key: fintxn_env
+          python_wheel_task:
+            package_name: fintxn
+            entry_point: fintxn
+            parameters: ["--env", "databricks", "generate", "--rows", "${var.n_transactions}"]
+
+        - task_key: bronze
+          depends_on: [{ task_key: generate }]
+          environment_key: fintxn_env
+          python_wheel_task:
+            package_name: fintxn
+            entry_point: fintxn
+            parameters: ["--env", "databricks", "bronze"]
+
+        - task_key: silver
+          depends_on: [{ task_key: bronze }]
+          environment_key: fintxn_env
+          python_wheel_task:
+            package_name: fintxn
+            entry_point: fintxn
+            parameters: ["--env", "databricks", "silver"]
+
+        - task_key: gold
+          depends_on: [{ task_key: silver }]
+          environment_key: fintxn_env
+          python_wheel_task:
+            package_name: fintxn
+            entry_point: fintxn
+            parameters: ["--env", "databricks", "gold"]
+
+        - task_key: train
+          depends_on: [{ task_key: gold }]
+          environment_key: fintxn_env
+          python_wheel_task:
+            package_name: fintxn
+            entry_point: fintxn
+            parameters: ["--env", "databricks", "train"]
+
+        - task_key: score
+          depends_on: [{ task_key: train }]
+          environment_key: fintxn_env
+          python_wheel_task:
+            package_name: fintxn
+            entry_point: fintxn
+            parameters: ["--env", "databricks", "score"]
+
+        - task_key: recon
+          depends_on: [{ task_key: silver }]
+          environment_key: fintxn_env
+          python_wheel_task:
+            package_name: fintxn
+            entry_point: fintxn
+            parameters: ["--env", "databricks", "recon"]
+
+        - task_key: export
+          depends_on: [{ task_key: score }, { task_key: recon }]
+          environment_key: fintxn_env
+          python_wheel_task:
+            package_name: fintxn
+            entry_point: fintxn
+            parameters: ["--env", "databricks", "export"]

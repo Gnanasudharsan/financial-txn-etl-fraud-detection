@@ -22,6 +22,19 @@ app = typer.Typer(
 log = get_logger("fintxn.cli")
 
 
+@app.callback()
+def main(
+    env: str | None = typer.Option(
+        None, "--env", help="Config profile (local, ci, aws, r2, databricks)"
+    ),
+) -> None:
+    """Financial transaction ETL & fraud detection pipeline."""
+    import os
+
+    if env:
+        os.environ["FINTXN_ENV"] = env
+
+
 @app.command()
 def info() -> None:
     """Print the resolved configuration (secrets redacted)."""
@@ -128,6 +141,17 @@ def score() -> None:
     lake = _lake()
     with job_run("score", lake) as ctx:
         _echo(run_score(lake, ctx))
+
+
+@app.command("setup-uc")
+def setup_uc() -> None:
+    """Create Unity Catalog schemas and the raw landing volume (Databricks only)."""
+    lake = _lake()
+    st = lake.settings.storage
+    for layer in ("raw", "bronze", "silver", "gold", "audit"):
+        lake.sql(f"CREATE SCHEMA IF NOT EXISTS {lake.schema_name(layer)}")
+    lake.sql(f"CREATE VOLUME IF NOT EXISTS {lake.schema_name('raw')}.landing")
+    _echo({"catalog": st.catalog, "volume": st.volume_path})
 
 
 @app.command()

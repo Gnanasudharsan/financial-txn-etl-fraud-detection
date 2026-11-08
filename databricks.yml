@@ -1,0 +1,35 @@
+# Databricks Asset Bundle for the fintxn lakehouse pipeline.
+# Targets Databricks Free Edition (serverless compute, Unity Catalog). See docs/DEPLOY_DATABRICKS.md.
+bundle:
+  name: fintxn
+
+include:
+  - databricks/resources/*.yml
+
+artifacts:
+  fintxn_wheel:
+    type: whl
+    build: uv build --wheel
+    path: .
+
+variables:
+  catalog:
+    description: Unity Catalog catalog that holds the fintxn_* schemas
+    default: workspace
+  n_transactions:
+    description: Rows to simulate. Free Edition has tight serverless quotas; keep it small.
+    default: "500000"
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      root_path: ~/.bundle/${bundle.name}/${bundle.target}
+
+  prod:
+    mode: production
+    workspace:
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      n_transactions: "1000000"
