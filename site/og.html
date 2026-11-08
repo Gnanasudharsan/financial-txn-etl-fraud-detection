@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<title>Ledgerline OG card</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  /* Source for assets/img/og.png (1200x630). Rendered with headless Chrome; numbers bound from data.js. */
+  html, body { margin: 0; width: 1200px; height: 630px; background: #0b0e13; color: #ece8df; font-family: Geist, sans-serif; overflow: hidden; }
+  .bg { position: absolute; inset: 0; background:
+      radial-gradient(40% 60% at 15% 20%, rgba(208,138,85,.22), transparent 70%),
+      radial-gradient(40% 60% at 90% 10%, rgba(234,189,85,.16), transparent 70%),
+      radial-gradient(60% 60% at 60% 120%, rgba(67,226,169,.12), transparent 70%); }
+  .in { position: relative; padding: 64px 72px; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; }
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 24px; }
+  .brand svg { width: 30px; height: 30px; }
+  h1 { font-size: 74px; line-height: 1; letter-spacing: -0.045em; margin: 54px 0 0; font-weight: 600; }
+  h1 em { font-family: "Instrument Serif"; font-weight: 400; font-style: italic; letter-spacing: -0.02em; background: linear-gradient(100deg,#d08a55,#bfc8d4 45%,#eabd55); -webkit-background-clip: text; color: transparent; }
+  .stats { margin-top: auto; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid rgba(236,232,223,.14); }
+  .stats > div { padding: 22px 0 0; }
+  .stats > div + div { padding-left: 24px; border-left: 1px solid rgba(236,232,223,.14); }
+  .v { font: 500 38px/1 "Geist Mono"; letter-spacing: -0.04em; }
+  .l { font: 13px/1.3 "Geist Mono"; color: #9aa1ad; text-transform: uppercase; letter-spacing: .04em; margin-top: 10px; }
+  .stack { position: absolute; right: 72px; top: 64px; font: 14px/1 "Geist Mono"; color: #9aa1ad; }
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="in">
+  <div class="brand"><svg viewBox="0 0 32 32"><rect x="3" y="20" width="26" height="6" rx="2" fill="#d08a55"/><rect x="3" y="12" width="26" height="6" rx="2" fill="#bfc8d4"/><rect x="3" y="4" width="26" height="6" rx="2" fill="#eabd55"/></svg>Ledgerline</div>
+  <div class="stack">PySpark · Delta Lake · LightGBM · MLflow</div>
+  <h1>Five million transactions.<br><em>Cleaned, scored and reconciled.</em></h1>
+  <div class="stats">
+    <div><div class="v" id="a"></div><div class="l">raw rows</div></div>
+    <div><div class="v" id="b"></div><div class="l">min end to end</div></div>
+    <div><div class="v" id="c"></div><div class="l">fraud recall</div></div>
+    <div><div class="v" id="d"></div><div class="l">recon accuracy</div></div>
+  </div>
+</div>
+<script src="/assets/js/data.js"></script>
+<script>
+  const D = window.SITE_DATA, n = (d) => new Intl.NumberFormat("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+  a.textContent = n(0).format(D.generation.raw_rows);
+  b.textContent = n(1).format(D.pipeline.total_seconds / 60);
+  c.textContent = n(2).format(D.model.test.recall * 100) + "%";
+  d.textContent = n(5).format(D.recon.accuracy * 100) + "%";
+</script>
+</body>
+</html>

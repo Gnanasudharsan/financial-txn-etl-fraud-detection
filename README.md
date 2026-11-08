@@ -17,6 +17,10 @@ RBAC, encryption, and a full audit trail. Runs at $0 on a laptop or on Databrick
 ![Streamlit](https://img.shields.io/badge/Streamlit-dashboard-FF4B4B?logo=streamlit&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green)
 
+**Case study site: [ledgerline-seven-self.vercel.app](https://ledgerline-seven-self.vercel.app)** covers the
+pipeline, the design decisions, and every measured result, with interactive charts. It's a static site in
+[`site/`](site/), and its numbers come from `scripts/build_site_data.py` (`make site-data`, then `make site` to preview).
+
 ## Measured results
 
 From one end-to-end `make pipeline ROWS=5000000` run on a 10-core / 16 GB laptop (details and

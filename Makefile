@@ -18,7 +18,7 @@ CLI := $(UV) fintxn
 ROWS_FLAG := $(if $(ROWS),--rows $(ROWS),)
 
 .PHONY: mlflow-ui help setup up down generate bronze silver gold train score recon export pipeline \
-        dashboard test test-fast lint fmt typecheck clean clean-data keys tf-fmt tf-validate \
+        dashboard site-data site test test-fast lint fmt typecheck clean clean-data keys tf-fmt tf-validate \
         airflow-up airflow-down audit
 
 help: ## Show this help
@@ -75,6 +75,12 @@ mlflow-ui: ## Browse MLflow runs and the model registry on http://localhost:5000
 
 dashboard: ## Run the Streamlit dashboard
 	$(UV) streamlit run dashboards/app.py
+
+site-data: ## Regenerate the showcase site's data file from docs/results and dashboard extracts
+	$(UV) python scripts/build_site_data.py
+
+site: site-data ## Serve the showcase site locally on http://localhost:4173
+	python3 -m http.server 4173 --directory site --bind 127.0.0.1
 
 test: ## Unit + integration tests with coverage (local filesystem, 10k rows)
 	FINTXN_ENV=ci $(UV) pytest --cov=fintxn --cov-report=term --cov-report=xml

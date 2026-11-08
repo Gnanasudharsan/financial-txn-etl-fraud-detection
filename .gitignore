@@ -53,3 +53,7 @@ infra/terraform/*.tfvars
 # Assistant files
 CLAUDE.md
 .claude/
+
+# Vercel CLI project link
+.vercel/
+site/.vercel/

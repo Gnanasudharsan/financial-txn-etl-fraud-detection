@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ledgerline: Financial Transaction ETL &amp; Fraud Detection</title>
+  <meta name="description" content="A case study: a PySpark and Delta Lake lakehouse that cleans 5M card transactions, detects fraud with LightGBM, and reconciles ledger against settlement, with encryption, RBAC and an audit trail. Every number is measured.">
+  <meta name="theme-color" content="#0B0E13">
+  <meta property="og:title" content="Ledgerline: five million transactions, cleaned, scored and reconciled">
+  <meta property="og:description" content="PySpark · Delta Lake · LightGBM · MLflow · Databricks. A measured, end-to-end case study.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ledgerline-seven-self.vercel.app/">
+  <meta property="og:image" content="https://ledgerline-seven-self.vercel.app/assets/img/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <link rel="canonical" href="https://ledgerline-seven-self.vercel.app/">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=Geist+Mono:wght@400..600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/main.css?v=3">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="progress" aria-hidden="true"><span></span></div>
+
+  <header class="nav" id="nav">
+    <div class="nav__inner">
+      <a class="brand" href="#top" aria-label="Ledgerline home">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="20" width="26" height="6" rx="2" fill="var(--bronze)"/><rect x="3" y="12" width="26" height="6" rx="2" fill="var(--silver)"/><rect x="3" y="4" width="26" height="6" rx="2" fill="var(--gold)"/></svg>
+        <span>Ledgerline</span>
+      </a>
+      <nav class="nav__links" aria-label="Sections">
+        <a href="#pipeline">Pipeline</a>
+        <a href="#decisions">Decisions</a>
+        <a href="#quality">Quality</a>
+        <a href="#model">Model</a>
+        <a href="#recon">Recon</a>
+        <a href="#security">Security</a>
+        <a href="#journey">Journey</a>
+      </nav>
+      <a class="btn btn--ghost btn--sm" href="https://github.com/Gnanasudharsan/financial-txn-etl-fraud-detection" target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        <span>Source</span>
+      </a>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- ============ HERO ============ -->
+    <section class="hero" id="top">
+      <div class="hero__glow" aria-hidden="true"></div>
+      <div class="wrap hero__copy">
+        <p class="eyebrow reveal"><span class="dot dot--mint"></span>Case study · Data engineering · Machine learning</p>
+        <h1 class="display reveal">
+          Five million transactions.<br>
+          <em class="serif">Cleaned, scored and reconciled.</em>
+        </h1>
+        <p class="lede reveal">
+          An end-to-end lakehouse for card payments: messy raw files go in, and fraud alerts and balanced books come out.
+          It's built on PySpark and Delta Lake, with encryption, role-based access and an audit trail on every run.
+          It runs on a laptop or on Databricks, for <strong>$0</strong>.
+        </p>
+        <div class="hero__cta reveal">
+          <a class="btn btn--primary" href="#pipeline">See how it works
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12m0 0l-5-5m5 5l5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a class="btn btn--ghost" href="#results">Jump to results</a>
+        </div>
+      </div>
+
+      <div class="wrap">
+        <figure class="flow reveal" aria-label="Animated illustration of transactions flowing through raw, bronze, silver and gold layers">
+          <canvas id="flow" aria-hidden="true"></canvas>
+          <div class="flow__labels" aria-hidden="true">
+            <span style="--c:var(--raw)">Raw</span>
+            <span style="--c:var(--bronze)">Bronze</span>
+            <span style="--c:var(--silver)">Silver</span>
+            <span style="--c:var(--gold)">Gold</span>
+          </div>
+          <div class="flow__legend" aria-hidden="true">
+            <span><i style="background:var(--vermilion)"></i>quarantined (<b data-k="calc.quarantinePct" data-f="pct2"></b>)</span>
+            <span><i class="ring"></i>flagged as fraud</span>
+          </div>
+          <figcaption class="flow__caption">Illustration. Quarantine and fraud rates match the measured run.</figcaption>
+        </figure>
+
+        <dl class="stats" id="results">
+          <div class="stat reveal">
+            <dt>raw rows ingested</dt>
+            <dd><span class="num" data-count="generation.raw_rows" data-f="int"></span></dd>
+          </div>
+          <div class="stat reveal">
+            <dt>end-to-end on a laptop</dt>
+            <dd><span class="num" data-count="calc.totalMinutes" data-f="dec1"></span><small>min</small></dd>
+          </div>
+          <div class="stat reveal">
+            <dt>fraud recall · June hold-out</dt>
+            <dd><span class="num" data-count="calc.recallPct" data-f="dec2"></span><small>%</small></dd>
+          </div>
+          <div class="stat reveal">
+            <dt>reconciliation accuracy</dt>
+            <dd><span class="num" data-count="calc.reconPct" data-f="dec5"></span><small>%</small></dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <!-- ============ STACK MARQUEE ============ -->
+    <section class="marquee" aria-label="Technology used">
+      <div class="marquee__track">
+        <span>PySpark 3.5</span><span>Delta Lake 3.3</span><span>LightGBM 4.6</span><span>MLflow 2.22</span><span>Great Expectations</span><span>Databricks Asset Bundles</span><span>Unity Catalog</span><span>Airflow 2.10</span><span>Terraform</span><span>AWS S3 · KMS · IAM</span><span>SeaweedFS</span><span>Streamlit</span><span>Power BI</span><span>GitHub Actions</span><span>uv</span><span>mypy strict</span>
+      </div>
+    </section>
+
+    <!-- ============ BRIEF ============ -->
+    <section class="section" id="brief">
+      <div class="wrap">
+        <header class="section__head">
+          <p class="kicker">01 · The brief</p>
+          <h2 class="h2 reveal">Three problems every bank pays for, <em class="serif">every single day.</em></h2>
+          <p class="sub reveal">The goal was to build what a payments data team actually runs, not a notebook demo. That means
+            production structure, real failure modes, and numbers that can be checked.</p>
+        </header>
+        <div class="cards3">
+          <article class="card reveal">
+            <div class="card__icon" style="--c:var(--bronze)">
+              <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h7" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/><circle cx="18" cy="16" r="3" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+            </div>
+            <h3>Data arrives dirty</h3>
+            <p>Nulls, duplicates, malformed amounts, impossible timestamps, corrupt lines and schema drift.
+              The simulator injects <b data-k="calc.defectPct" data-f="pct1"></b> defects across
+              <b data-k="generation.files" data-f="int"></b> files (<b data-k="calc.gb" data-f="dec2"></b> GB), the same kinds real feeds have.</p>
+          </article>
+          <article class="card reveal">
+            <div class="card__icon" style="--c:var(--vermilion)">
+              <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V7l8-4z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><path d="M12 8v5M12 16h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </div>
+            <h3>Fraud hides in volume</h3>
+            <p><b data-k="generation.fraud_transactions" data-f="int"></b> fraudulent transactions across five attack patterns
+              (card testing, account takeover, velocity bursts, night-time spending, high-risk merchants), mixed in with
+              legitimate look-alikes on purpose.</p>
+          </article>
+          <article class="card reveal">
+            <div class="card__icon" style="--c:var(--mint)">
+              <svg viewBox="0 0 24 24"><path d="M4 6h7v12H4zM13 6h7v12h-7z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><path d="M7 10h1M7 13h1M16 10h1M16 13h1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </div>
+            <h3>The books must balance</h3>
+            <p>Every entry in the internal ledger has to match a processor settlement: <b data-k="recon.ledger_rows" data-f="int"></b> against
+              <b data-k="recon.settlement_rows" data-f="int"></b> rows, with amount drift, timing gaps, duplicates and orphans to find.</p>
+          </article>
+        </div>
+        <p class="note reveal"><span class="tag">Honest note</span> The data is simulated, with seeded randomness and ground truth for every defect, fraud and break.
+          That makes every claim on this page checkable, and it also means the fraud is easier to catch than in real life.
+          Both points come up again below.</p>
+      </div>
+    </section>
+
+    <!-- ============ PIPELINE (sticky story) ============ -->
+    <section class="section section--deep" id="pipeline">
+      <div class="wrap">
+        <header class="section__head">
+          <p class="kicker">02 · The pipeline</p>
+          <h2 class="h2 reveal">From raw bytes to decisions, <em class="serif">in eight audited steps.</em></h2>
+          <p class="sub reveal">A medallion architecture: each layer has one job, one storage bucket and one access policy.
+            Scroll through it. Every row count and runtime below is from the final 5M-row run.</p>
+        </header>
+
+        <div class="story">
+          <div class="story__visual" aria-hidden="true">
+            <div class="rail">
+              <div class="rail__line"><span class="rail__fill"></span></div>
+              <ol class="rail__nodes" id="railNodes"></ol>
+            </div>
+            <div class="panel" id="stagePanel">
+              <p class="panel__step"><span id="pStep">01</span> / 08</p>
+              <p class="panel__name" id="pName">Generate</p>
+              <div class="panel__metrics">
+                <div><span class="lbl">rows in</span><span class="val mono" id="pIn">-</span></div>
+                <div><span class="lbl">rows out</span><span class="val mono" id="pOut">-</span></div>
+                <div><span class="lbl">wall clock</span><span class="val mono" id="pSec">-</span></div>
+              </div>
+              <div class="panel__bar"><span id="pBar"></span></div>
+              <p class="panel__foot" id="pFoot">share of the 25.1-minute run</p>
+            </div>
+          </div>
+
+          <div class="story__steps">
+            <article class="step" data-stage="generate">
+              <p class="step__tag" style="--c:var(--raw)">Raw · simulator</p>
+              <h3>Simulate a bank, flaws and all</h3>
+              <p>A seeded, chunked generator builds 50k customers, 100k Luhn-valid cards and 20k merchants, then six months of
+                transactions in CSV and JSON-lines. Fraud is injected as <em>episodes</em>, not random labels: a stolen card is
+                tested with tiny charges, then drained. On top of that come the defects, a ledger, a settlement feed with
+                deliberate breaks, and a ground-truth file for everything.</p>
+              <ul class="chips"><li>Faker</li><li>NumPy</li><li>seed 42</li><li>fits in 0.85 GB of RAM</li></ul>
+            </article>
+            <article class="step" data-stage="bronze">
+              <p class="step__tag" style="--c:var(--bronze)">Bronze · land it exactly once</p>
+              <h3>Card numbers never touch the lake</h3>
+              <p>The moment a row lands, the card number becomes an HMAC-SHA256 token plus its last four digits, computed in native Spark
+                SQL with no Python UDF. Ingestion is incremental and idempotent: a processed-file log <em>and</em> Delta's
+                <code>txnAppId/txnVersion</code>, so a crash between two commits can't double-load. Corrupt lines and unexpected
+                columns are kept for later, never silently dropped.</p>
+              <ul class="chips"><li>Delta Lake</li><li>PERMISSIVE parsing</li><li>_rescued_data</li><li>MERGE for dimensions</li></ul>
+            </article>
+            <article class="step" data-stage="silver">
+              <p class="step__tag" style="--c:var(--silver)">Silver · trust, but verify</p>
+              <h3>Every rejected row says why</h3>
+              <p>Explicit schemas, four timestamp formats normalized to UTC, currencies converted to USD, and exact and
+                near-duplicate detection with window functions. Bad rows go to a quarantine table tagged with one of 21 reason codes.
+                Then a 23-expectation Great Expectations suite certifies what was published. Customer PII is encrypted per value
+                with AES-256-GCM.</p>
+              <ul class="chips"><li>21 reason codes</li><li>Great Expectations</li><li>Delta CHECK constraints</li><li>AES-256-GCM</li></ul>
+            </article>
+            <article class="step" data-stage="gold">
+              <p class="step__tag" style="--c:var(--gold)">Gold · features without hindsight</p>
+              <h3>28 features that only know the past</h3>
+              <p>Velocity counts over 1-hour, 24-hour and 7-day windows, amount z-scores, implied travel speed between swipes, and
+                new-device and new-merchant flags. Every window ends one second <em>before</em> the transaction. Merchant-category
+                risk is fitted on the training months only, and merchant fraud rates only use reports filed before that day.</p>
+              <ul class="chips"><li>point-in-time windows</li><li>OPTIMIZE · ZORDER</li><li>data-quality marts</li></ul>
+            </article>
+            <article class="step" data-stage="train">
+              <p class="step__tag" style="--c:var(--gold)">Model · LightGBM + MLflow</p>
+              <h3>Train on the past, test on the future</h3>
+              <p>Train on January to April, tune the alert threshold on May, and evaluate once on June, never on a random shuffle.
+                Class imbalance is handled with <code>scale_pos_weight</code>. MLflow logs every parameter, metric, plot and the
+                exact Delta version of the features table, then registers the model under a <code>champion</code> alias.</p>
+              <ul class="chips"><li>time-based split</li><li>recall ≥ 95% target</li><li>model registry</li></ul>
+            </article>
+            <article class="step" data-stage="score">
+              <p class="step__tag" style="--c:var(--gold)">Score · batch inference</p>
+              <h3>Every transaction gets a score</h3>
+              <p>The champion model is loaded from the registry and applied across the whole table with Spark's
+                <code>mapInPandas</code>, so it scales with the cluster. Out come alerts, daily KPIs, merchant risk and customer risk marts.</p>
+              <ul class="chips"><li>mapInPandas</li><li>fraud_alerts</li><li>merchant_risk</li></ul>
+            </article>
+            <article class="step" data-stage="recon">
+              <p class="step__tag" style="--c:var(--mint)">Reconcile · ledger vs settlement</p>
+              <h3>Two passes, seven verdicts</h3>
+              <p>Pass one matches on the reference key. Pass two recovers settlements that lost their reference by matching auth code and
+                merchant. Amounts within $0.05 and dates within two days count as matches. Every record ends up in one of seven
+                categories, and the result is scored against injected ground truth.</p>
+              <ul class="chips"><li>two-pass matching</li><li>tolerance windows</li><li>CSV break report</li></ul>
+            </article>
+            <article class="step" data-stage="export">
+              <p class="step__tag" style="--c:var(--mint)">Serve · dashboards</p>
+              <h3>Small, safe extracts for humans</h3>
+              <p>Gold marts are exported as compact, aggregated, PII-checked Parquet files: about 110 KB for a seven-page Streamlit app,
+                plus a star schema with DAX measures for Power BI. An export that contains an identifier fails the job.</p>
+              <ul class="chips"><li>Streamlit</li><li>Power BI</li><li>PII guard</li></ul>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ RUNTIME ============ -->
+    <section class="section" id="runtime">
+      <div class="wrap">
+        <header class="section__head section__head--row">
+          <div>
+            <p class="kicker">03 · One command, one run</p>
+            <h2 class="h2 reveal"><code class="inline-cmd">make pipeline</code> <em class="serif">took <span data-k="calc.totalMinutes" data-f="dec1"></span> minutes.</em></h2>
+          </div>
+          <p class="sub reveal">On a 10-core, 16 GB laptop with Spark in local mode, all eight stages ran end to end with full refreshes.
+            Each stage writes an audit record. Hover over a segment for details.</p>
+        </header>
+        <div class="timeline reveal" id="runtimeBar" role="img" aria-label="Runtime per pipeline stage"></div>
+        <div class="timeline__legend" id="runtimeLegend"></div>
+      </div>
+    </section>
+
+    <!-- ============ DECISIONS ============ -->
+    <section class="section section--paper" id="decisions">
+      <div class="wrap">
+        <header class="section__head">
+          <p class="kicker">04 · Why this, not that</p>
+          <h2 class="h2 reveal">Every tool had <em class="serif">a reason, and a cost.</em></h2>
+          <p class="sub reveal">The choices that shaped the project: what was picked, what else was considered, and what was given up.</p>
+        </header>
+        <div class="decide reveal">
+          <div class="decide__list" role="tablist" aria-label="Design decisions" id="decideList"></div>
+          <div class="decide__panel" id="decidePanel" role="tabpanel" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ QUALITY ============ -->
+    <section class="section" id="quality">
+      <div class="wrap">
+        <header class="section__head">
+          <p class="kicker">05 · Data quality</p>
+          <h2 class="h2 reveal"><span class="accent-mint" data-k="calc.validPct" data-f="pct2"></span> published.
+            <em class="serif">The rest explained.</em></h2>
+          <p class="sub reveal">Of <b data-k="quality.silver_in" data-f="int"></b> raw transaction rows,
+            <b data-k="quality.valid" data-f="int"></b> passed into silver and <b data-k="quality.quarantined" data-f="int"></b> were quarantined.
+            Each quarantined row carries the reason it failed.</p>
+        </header>
+
+        <div class="grid-q">
+          <div class="pane pane--tall reveal">
+            <div class="pane__head"><h3>Quarantine by primary reason</h3><span class="muted mono">rows</span></div>
+            <div id="reasonChart" class="hbars"></div>
+          </div>
+          <div class="pane-stack">
+            <div class="pane reveal">
+              <div class="pane__head"><h3>Great Expectations</h3></div>
+              <div class="ring-stat">
+                <svg viewBox="0 0 120 120" class="ring-svg" aria-hidden="true">
+                  <circle cx="60" cy="60" r="52" class="ring-bg"/>
+                  <circle cx="60" cy="60" r="52" class="ring-fg" id="gxRing" style="--p:1;stroke:var(--mint)"/>
+                </svg>
+                <div class="ring-stat__txt"><span class="big mono"><span data-k="quality.gx_passed"></span>/<span data-k="quality.gx_total"></span></span><span class="muted">expectations passed</span></div>
+              </div>
+            </div>
+            <div class="pane reveal">
+              <div class="pane__head"><h3>Corrupt lines</h3></div>
+              <div class="match">
+                <div><span class="muted">injected</span><span class="big mono" data-k="generation.corrupt_lines" data-f="int"></span></div>
+                <span class="match__eq">=</span>
+                <div><span class="muted">caught</span><span class="big mono accent-mint" data-k="calc.corruptCaught" data-f="int"></span></div>
+              </div>
+            </div>
+            <div class="pane reveal">
+              <div class="pane__head"><h3>Daily pass rate</h3><span class="muted mono" id="passRange"></span></div>
+              <div id="passSpark" class="spark"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MODEL ============ -->
+    <section class="section section--deep" id="model">
+      <div class="wrap">
+        <header class="section__head">
+          <p class="kicker">06 · The fraud model</p>
+          <h2 class="h2 reveal">Catches <span class="accent-gold" data-k="calc.recallPct2" data-f="pct2s"></span> of fraud.
+            <em class="serif"><span data-k="calc.precisionPct" data-f="pct2s"></span> of its alerts are right.</em></h2>
+          <p class="sub reveal">Evaluated once on June, a month the model never saw, at a threshold chosen on May.
+            It raises an alert on <b data-k="calc.alertRate" data-f="pct2"></b> of transactions.</p>
+        </header>
+
+        <div class="kpis reveal">
+          <div class="kpi"><span class="kpi__v mono" data-k="model.test.pr_auc" data-f="dec4"></span><span class="kpi__l">PR-AUC</span></div>
+          <div class="kpi"><span class="kpi__v mono" data-k="model.test.roc_auc" data-f="dec6"></span><span class="kpi__l">ROC-AUC</span></div>
+          <div class="kpi"><span class="kpi__v mono" data-k="model.test.f1" data-f="dec4"></span><span class="kpi__l">F1</span></div>
+          <div class="kpi"><span class="kpi__v mono" data-k="model.threshold" data-f="dec6"></span><span class="kpi__l">threshold (from May)</span></div>
+        </div>
+
+        <div class="grid-m">
+          <div class="pane reveal">
+            <div class="pane__head"><h3>Confusion matrix · June</h3><span class="muted mono" data-k="model.test.rows" data-f="int"></span></div>
+            <div class="cm" id="cm"></div>
+          </div>
+          <div class="pane reveal">
+            <div class="pane__head"><h3>Capture rate by fraud pattern</h3><span class="muted mono">caught / total</span></div>
+            <div id="captureChart" class="hbars hbars--pct"></div>
+          </div>
+          <div class="pane reveal">
+            <div class="pane__head"><h3>What the model relies on</h3><span class="muted mono">share of gain</span></div>
+            <div id="featureChart" class="hbars hbars--pct"></div>
+          </div>
+          <div class="pane reveal">
+            <div class="pane__head"><h3>Fraud injected, by pattern</h3><span class="muted mono">all six months</span></div>
+            <div id="patternChart" class="hbars"></div>
+          </div>
+          <div class="pane pane--wide reveal">
+            <div class="pane__head"><h3>Daily alert precision and recall</h3>
+              <div class="legend-inline"><span><i style="background:var(--gold)"></i>precision</span><span><i style="background:var(--mint)"></i>recall</span><span><i class="hatch"></i>train · valid · test</span></div>
+            </div>
+            <div id="dailyChart" class="area"></div>
+          </div>
+        </div>
+
+        <article class="twist reveal">
+          <div class="twist__badge">Plot twist</div>
+          <div class="twist__body">
+            <h3>The first model was <em class="serif">too good to be true.</em></h3>
+            <p>Simulation v1 scored a PR-AUC of <b data-k="model.v1_test.pr_auc" data-f="dec4"></b> with only <b data-k="model.v1_test.fp" data-f="int"></b> false positives.
+              Instead of celebrating, I checked for leakage and found none. The real problem was the simulator: every fraudster came from a
+              distant city, so travel speed alone gave them away. Version 2 adds legitimate look-alikes (VPN users, domestic proxies,
+              hijacked known devices and chip-cloned cards), and the whole pipeline was rerun.</p>
+          </div>
+          <div class="twist__cmp">
+            <div><span class="muted">v1 PR-AUC</span><span class="mono strike" data-k="model.v1_test.pr_auc" data-f="dec4"></span></div>
+            <div><span class="muted">v2 PR-AUC</span><span class="mono accent-gold" data-k="model.test.pr_auc" data-f="dec4"></span></div>
+            <div><span class="muted">false positives</span><span class="mono"><span data-k="model.v1_test.fp"></span> → <span class="accent-red" data-k="model.test.fp"></span></span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ RECON ============ -->
+    <section class="section" id="recon">
+      <div class="wrap">
+        <header class="section__head">
+          <p class="kicker">07 · Reconciliation</p>
+          <h2 class="h2 reveal"><span data-k="calc.reconRecordsM" data-f="dec1"></span>M records classified
+            <em class="serif">in <span data-k="recon.seconds" data-f="dec1"></span> seconds.</em></h2>
+          <p class="sub reveal">Ledger against settlement for all 181 business days, scored against the breaks the simulator injected.
+            <b data-k="calc.misclassified" data-f="int"></b> of <b data-k="recon.truth_compared" data-f="int"></b> ledger entries disagreed with ground truth.</p>
+        </header>
+
+        <div class="grid-r">
+          <div class="pane reveal">
+            <div class="pane__head"><h3>Where every record landed</h3><span class="muted mono"><span data-k="recon.breaks" data-f="int"></span> breaks</span></div>
+            <div class="donut-wrap">
+              <svg viewBox="0 0 200 200" class="donut" id="donut" aria-hidden="true"></svg>
+              <div class="donut__center"><span class="big mono" data-k="calc.matchedPct" data-f="pct2"></span><span class="muted">matched</span></div>
+            </div>
+            <ul class="legend-list" id="reconLegend"></ul>
+          </div>
+          <div class="pane-stack">
+            <div class="pane reveal">
+              <div class="pane__head"><h3>Accuracy vs ground truth</h3></div>
+              <p class="mega mono accent-mint"><span data-k="calc.reconPct" data-f="dec5"></span>%</p>
+              <p class="muted small">Both misclassified rows were injected as amount mismatches, but the random perturbation of a tiny amount
+                fell inside the $0.05 tolerance. Under the stated rules the engine was right; it's an artifact of the injector.</p>
+            </div>
+            <div class="pane reveal">
+              <div class="pane__head"><h3>Found exactly</h3></div>
+              <div class="match match--2">
+                <div><span class="muted">orphan settlements</span><span class="big mono"><span data-k="recon.orphans_found" data-f="int"></span><small>/<span data-k="recon.orphans_expected" data-f="int"></span></small></span></div>
+                <div><span class="muted">duplicates</span><span class="big mono"><span data-k="recon.duplicates_found" data-f="int"></span><small>/<span data-k="recon.duplicates_expected" data-f="int"></span></small></span></div>
+              </div>
+            </div>
+            <div class="pane reveal">
+              <div class="pane__head"><h3>Versus a manual process</h3><span class="tag tag--warn">estimate</span></div>
+              <div class="vs">
+                <div class="vs__row"><span>Manual, per business day</span><span class="vs__bar"><i style="--w:100%;background:var(--faint)"></i></span><span class="mono" data-k="recon.manual_minutes_estimate" data-f="min"></span></div>
+                <div class="vs__row"><span>Automated, all 181 days</span><span class="vs__bar"><i style="--w:0.6%;background:var(--mint)"></i></span><span class="mono" data-k="recon.seconds" data-f="sec"></span></div>
+              </div>
+              <p class="muted small">The manual baseline is an assumption (six steps for an analyst using spreadsheets), not a measurement. Even if each daily run
+                took the full measured time, that's <b data-k="calc.reconSaving" data-f="pct2"></b> less time per day.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECURITY ============ -->
+    <section class="section section--deep" id="security">
+      <div class="wrap">
+        <header class="section__head">
+          <p class="kicker">08 · Security &amp; audit</p>
+          <h2 class="h2 reveal">Privacy is a placement decision. <em class="serif">Make it at the door.</em></h2>
+          <p class="sub reveal">Delta keeps old files for time travel, so a card number written once stays in history forever.
+            That's why tokenization happens at landing, before anything is written.</p>
+        </header>
+
+        <div class="grid-s">
+          <div class="pane reveal">
+            <div class="pane__head"><h3>Card number → token</h3><span class="muted mono">live, in your browser</span></div>
+            <div class="tokenize">
+              <div class="tokenize__row"><span class="lbl">PAN (Visa test number)</span><span class="mono pan" id="pan">4111 1111 1111 1111</span></div>
+              <div class="tokenize__arrow"><span class="mono">HMAC-SHA256(key, PAN)</span></div>
+              <div class="tokenize__row"><span class="lbl">card_token</span><span class="mono token" id="token">computing…</span></div>
+              <div class="tokenize__row"><span class="lbl">card_last4</span><span class="mono" id="last4">1111</span></div>
+              <button class="btn btn--ghost btn--sm" id="retoken" type="button">Try another card</button>
+            </div>
+            <p class="muted small">Deterministic, so joins still work. Irreversible without the key. The same function runs as native Spark SQL and was checked bit for bit against Python's <code>hmac</code>.</p>
+          </div>
+
+          <div class="pane reveal">
+            <div class="pane__head"><h3>One access model, enforced three times</h3></div>
+            <div class="rbac" role="table" aria-label="Role-based access by layer">
+              <div class="rbac__row rbac__row--head" role="row"><span role="columnheader">role</span><span role="columnheader">raw</span><span role="columnheader">bronze</span><span role="columnheader">silver</span><span role="columnheader">gold</span><span role="columnheader">audit</span><span role="columnheader">PII</span></div>
+              <div class="rbac__row" role="row"><span role="cell">data_engineer</span><i class="rw">RW</i><i class="rw">RW</i><i class="rw">RW</i><i class="rw">RW</i><i class="rw">RW</i><i class="r">audited</i></div>
+              <div class="rbac__row" role="row"><span role="cell">analyst</span><i class="no">–</i><i class="no">–</i><i class="m">masked</i><i class="r">R</i><i class="no">–</i><i class="no">no</i></div>
+              <div class="rbac__row" role="row"><span role="cell">auditor</span><i class="no">–</i><i class="r">R</i><i class="r">R</i><i class="r">R</i><i class="r">R</i><i class="r">audited</i></div>
+            </div>
+            <ul class="enforce">
+              <li><b>Local</b> SeaweedFS per-identity bucket policies, tested: the analyst gets AccessDenied on bronze.</li>
+              <li><b>AWS</b> least-privilege IAM roles, KMS keys, and TLS-only bucket policies in Terraform.</li>
+              <li><b>Databricks</b> Unity Catalog grants, plus a view that decrypts PII in SQL for auditors only.</li>
+            </ul>
+          </div>
+
+          <div class="pane pane--wide reveal">
+            <div class="pane__head"><h3>The audit trail of the final run</h3><span class="muted mono">every job, every Delta version it wrote</span></div>
+            <div class="audit" id="auditTable"></div>
+            <div class="term">
+              <div class="term__bar"><i></i><i></i><i></i><span>replay any run</span></div>
+              <pre><code><span class="c-mut">$</span> uv run fintxn time-travel <span class="c-gold" id="ttRun">run_id</span>
+<span class="c-mut"># reads each table at the exact Delta version that run produced</span></code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ENGINEERING ============ -->
+    <section class="section" id="engineering">
+      <div class="wrap">
+        <header class="section__head">
+          <p class="kicker">09 · Engineering</p>
+          <h2 class="h2 reveal">Treated like production, <em class="serif">because that's the point.</em></h2>
+        </header>
+        <div class="bento">
+          <div class="bento__cell reveal"><span class="mega mono" data-count="engineering.tests" data-f="int"></span><p>automated tests, including Spark integration tests on a 10k-row pipeline</p></div>
+          <div class="bento__cell reveal"><span class="mega mono"><span data-count="engineering.coverage_transform_pct" data-f="int"></span><small>%</small></span><p>coverage on transform modules (gate: <span data-k="engineering.coverage_gate_pct"></span>%); <span data-k="engineering.coverage_overall_pct"></span>% overall</p></div>
+          <div class="bento__cell reveal"><span class="mega mono" data-count="calc.commitCount" data-f="int"></span><p>conventional commits, one phase at a time, each one passing lint and tests</p></div>
+          <div class="bento__cell bento__cell--wide reveal">
+            <ul class="checks">
+              <li>ruff + mypy <code>--strict</code> on every commit (pre-commit)</li>
+              <li>GitHub Actions: lint, types, tests with Java 17, coverage gate, <code>terraform validate</code></li>
+              <li>Pinned lockfile with uv, Python 3.11</li>
+              <li>One config abstraction: local · CI · AWS · R2 · Databricks</li>
+              <li>Databricks Asset Bundle and Airflow DAG kept in sync by a parity test</li>
+              <li>Decision log (12 records) for every non-obvious choice</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ JOURNEY ============ -->
+    <section class="section section--paper" id="journey">
+      <div class="wrap">
+        <header class="section__head">
+          <p class="kicker">10 · How it came together</p>
+          <h2 class="h2 reveal">Eleven phases. <em class="serif">Five things went wrong.</em></h2>
+          <p class="sub reveal">Each phase followed the same loop: build, verify at scale, commit, record the numbers. The detours taught the most.</p>
+        </header>
+        <ol class="journey">
+          <li class="reveal"><span class="ph">00</span><div><h4>Scaffold</h4><p>uv, Makefile, Docker Compose, config profiles, a storage abstraction with one bucket per layer.</p>
+            <aside class="bump"><b>Detour:</b> MinIO's images and binaries were gone and its repo archived. Swapped in SeaweedFS. Because the code only speaks S3, nothing else changed.</aside></div></li>
+          <li class="reveal"><span class="ph">01</span><div><h4>Simulator</h4><p>Dimensions, fraud episodes, defect injection, ledger and settlement with ground truth. Chunked to stay under 1 GB of RAM.</p></div></li>
+          <li class="reveal"><span class="ph">02</span><div><h4>Bronze</h4><p>Tokenize on landing, file tracking, Delta transaction IDs, corrupt-record capture. Verified that row counts match raw line counts.</p></div></li>
+          <li class="reveal"><span class="ph">03</span><div><h4>Silver</h4><p>Schemas, 21 reason codes, deduplication, quarantine, CHECK constraints, Great Expectations, AES-GCM.</p>
+            <aside class="bump"><b>Detour:</b> timestamps shifted by five hours. PySpark returns local-time datetimes, so the driver, JVM and Spark were all pinned to UTC.</aside></div></li>
+          <li class="reveal"><span class="ph">04</span><div><h4>Gold</h4><p>28 point-in-time features, compacted with ZORDER, plus data-quality marts.</p></div></li>
+          <li class="reveal"><span class="ph">05</span><div><h4>Model</h4><p>LightGBM, time split, recall-targeted threshold, MLflow registry, batch scoring.</p>
+            <aside class="bump"><b>Detour:</b> PR-AUC 0.9994 was too easy, so the simulator was rebuilt with confounders. Also, a SQLAlchemy 2.1 release broke MLflow, fixed by pinning 2.0.</aside></div></li>
+          <li class="reveal"><span class="ph">06</span><div><h4>Reconciliation</h4><p>Two-pass matching with tolerances, seven categories, accuracy against truth, and a runtime benchmark.</p></div></li>
+          <li class="reveal"><span class="ph">07</span><div><h4>Security &amp; audit</h4><p>Encryption at rest, role-gated audited PII decryption, a time-travel replay command, Terraform for AWS.</p>
+            <aside class="bump"><b>Detour:</b> enabling bucket encryption made every write fail until a key-encryption key was configured. Caught immediately, then fixed properly.</aside></div></li>
+          <li class="reveal"><span class="ph">08</span><div><h4>Orchestration</h4><p>Databricks Asset Bundle (serverless) and an equivalent Airflow DAG.</p></div></li>
+          <li class="reveal"><span class="ph">09</span><div><h4>Dashboards</h4><p>A seven-page Streamlit app and a Power BI star schema.</p></div></li>
+          <li class="reveal"><span class="ph">10</span><div><h4>CI &amp; polish</h4><p>GitHub Actions passed on the first run. Docs and results are generated from the run's JSON.</p></div></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============ LESSONS ============ -->
+    <section class="section" id="lessons">
+      <div class="wrap">
+        <header class="section__head">
+          <p class="kicker">11 · Insights</p>
+          <h2 class="h2 reveal">What this project <em class="serif">taught me.</em></h2>
+        </header>
+        <div class="lessons">
+          <article class="lesson reveal"><span class="lesson__n">i</span><h3>A suspiciously good metric is a bug report.</h3><p>A near-perfect score called for an investigation, not a résumé line. Fixing the data made the model worse, and made the result more honest.</p></article>
+          <article class="lesson reveal"><span class="lesson__n">ii</span><h3>Idempotency needs two locks.</h3><p>A processed-file log alone fails if a job dies between two commits. Delta transaction IDs close that gap.</p></article>
+          <article class="lesson reveal"><span class="lesson__n">iii</span><h3>Measure the claim, label the guess.</h3><p>Recon accuracy is checked against injected truth. The manual-time baseline is an assumption, so it's labelled as one.</p></article>
+          <article class="lesson reveal"><span class="lesson__n">iv</span><h3>Abstractions pay rent.</h3><p>One storage interface turned a dead dependency into a config change, and lets the same code run on S3, R2 or Unity Catalog.</p></article>
+          <article class="lesson reveal"><span class="lesson__n">v</span><h3>Time zones fail quietly.</h3><p>No error, just wrong hours. Pin UTC in every runtime, then derive local time on purpose.</p></article>
+          <article class="lesson reveal"><span class="lesson__n">vi</span><h3>Where the model misses is the story.</h3><p>Velocity bursts on chip cards nearby, and late-night shoppers, overlap with real behaviour. That's where the next feature work goes.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ RUN IT ============ -->
+    <section class="section section--deep cta" id="run">
+      <div class="wrap">
+        <header class="section__head section__head--center">
+          <p class="kicker">Run it yourself</p>
+          <h2 class="h2 reveal">Three commands. <em class="serif">Same numbers.</em></h2>
+          <p class="sub reveal">Seeded, pinned and free. Docker, Java 17 and uv are all you need.</p>
+        </header>
+        <div class="runs">
+          <div class="term reveal">
+            <div class="term__bar"><i></i><i></i><i></i><span>locally</span><button class="copy" data-copy="make setup && make up && make pipeline" type="button">Copy</button></div>
+            <pre><code><span class="c-mut">$</span> make setup <span class="c-mut">&amp;&amp;</span> make up <span class="c-mut">&amp;&amp;</span> make pipeline
+<span class="c-mut">$</span> make dashboard   <span class="c-mut"># Streamlit</span>
+<span class="c-mut">$</span> make mlflow-ui   <span class="c-mut"># experiments + registry</span></code></pre>
+          </div>
+          <div class="term reveal">
+            <div class="term__bar"><i></i><i></i><i></i><span>Databricks</span><button class="copy" data-copy="databricks bundle deploy -t dev && databricks bundle run fintxn_pipeline -t dev" type="button">Copy</button></div>
+            <pre><code><span class="c-mut">$</span> databricks bundle validate -t dev
+<span class="c-mut">$</span> databricks bundle deploy -t dev
+<span class="c-mut">$</span> databricks bundle run fintxn_pipeline -t dev</code></pre>
+          </div>
+        </div>
+        <div class="hero__cta hero__cta--center reveal">
+          <a class="btn btn--primary" href="https://github.com/Gnanasudharsan/financial-txn-etl-fraud-detection" target="_blank" rel="noopener">View the source on GitHub</a>
+          <a class="btn btn--ghost" href="https://github.com/Gnanasudharsan/financial-txn-etl-fraud-detection/blob/main/docs/RESULTS.md" target="_blank" rel="noopener">Read the full results</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__inner">
+      <div class="brand brand--foot">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="20" width="26" height="6" rx="2" fill="var(--bronze)"/><rect x="3" y="12" width="26" height="6" rx="2" fill="var(--silver)"/><rect x="3" y="4" width="26" height="6" rx="2" fill="var(--gold)"/></svg>
+        <span>Ledgerline</span>
+      </div>
+      <p class="muted small">Built by Gnanasudharsan. Every figure on this page is generated from the pipeline's own output files
+        (<code>scripts/build_site_data.py</code>). The data is simulated.</p>
+      <a class="muted small" href="https://github.com/Gnanasudharsan/financial-txn-etl-fraud-detection" target="_blank" rel="noopener">github.com/Gnanasudharsan/financial-txn-etl-fraud-detection</a>
+    </div>
+  </footer>
+
+  <div class="tooltip" id="tooltip" role="tooltip"></div>
+  <script src="/assets/js/data.js?v=3"></script>
+  <script src="/assets/js/main.js?v=3"></script>
+</body>
+</html>
