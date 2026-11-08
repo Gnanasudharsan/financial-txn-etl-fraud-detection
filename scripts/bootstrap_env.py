@@ -22,7 +22,7 @@ _ALNUM = string.ascii_letters + string.digits
 
 
 def _random_value(key: str) -> str:
-    if key == "FINTXN_TOKEN_KEY":
+    if key in ("FINTXN_TOKEN_KEY", "S3_SSE_KEK"):
         return secrets.token_hex(32)
     if key == "FINTXN_ENCRYPTION_KEY":
         return base64.b64encode(secrets.token_bytes(32)).decode()
