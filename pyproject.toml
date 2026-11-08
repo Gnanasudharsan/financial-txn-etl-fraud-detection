@@ -76,6 +76,11 @@ disallow_any_generics = false
 module = ["fintxn.generate.*"]
 disable_error_code = ["call-overload", "no-any-return"]
 
+[[tool.mypy.overrides]]
+# GX re-exports expectation classes dynamically.
+module = ["fintxn.quality.*"]
+disable_error_code = ["attr-defined"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
