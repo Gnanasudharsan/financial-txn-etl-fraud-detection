@@ -4,9 +4,14 @@ from __future__ import annotations
 
 import base64
 import os
+import time
 from collections.abc import Iterator
 
 import pytest
+
+# Spark collects TimestampType as naive *local* datetimes: pin the driver to UTC.
+os.environ["TZ"] = "UTC"
+time.tzset()
 
 os.environ.setdefault("FINTXN_TOKEN_KEY", "0f" * 32)
 os.environ.setdefault("FINTXN_ENCRYPTION_KEY", base64.b64encode(b"k" * 32).decode())
@@ -47,3 +52,28 @@ def lake(spark, settings):
     from fintxn.storage import Lake
 
     return Lake(spark, settings)
+
+
+@pytest.fixture(scope="session")
+def generated(settings):
+    from fintxn.generate.runner import run_generation
+
+    return run_generation(settings, rows=settings.data.n_transactions)
+
+
+@pytest.fixture(scope="session")
+def bronze_result(lake, generated):
+    from fintxn.audit import job_run
+    from fintxn.bronze.ingest import run_bronze
+
+    with job_run("bronze", lake) as ctx:
+        return run_bronze(lake, ctx)
+
+
+@pytest.fixture(scope="session")
+def silver_result(lake, bronze_result):
+    from fintxn.audit import job_run
+    from fintxn.silver.job import run_silver
+
+    with job_run("silver", lake) as ctx:
+        return run_silver(lake, ctx)

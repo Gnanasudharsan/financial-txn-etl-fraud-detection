@@ -5,20 +5,8 @@ from pyspark.sql import functions as F
 
 from fintxn.audit import job_run
 from fintxn.bronze.ingest import INGEST_LOG, run_bronze
-from fintxn.generate.runner import run_generation
 
 pytestmark = [pytest.mark.spark, pytest.mark.integration]
-
-
-@pytest.fixture(scope="module")
-def generated(settings):
-    return run_generation(settings, rows=settings.data.n_transactions)
-
-
-@pytest.fixture(scope="module")
-def bronze_result(lake, generated):
-    with job_run("bronze", lake) as ctx:
-        return run_bronze(lake, ctx)
 
 
 def test_bronze_row_counts_match_raw(lake, generated, bronze_result) -> None:
