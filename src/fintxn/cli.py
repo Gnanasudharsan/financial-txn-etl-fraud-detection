@@ -77,5 +77,19 @@ def bronze(
         _echo(run_bronze(lake, ctx, full_refresh=full_refresh))
 
 
+@app.command()
+def silver(
+    full_refresh: bool = typer.Option(False, help="Reprocess all bronze batches"),
+    skip_gx: bool = typer.Option(False, help="Skip the Great Expectations suite"),
+) -> None:
+    """Clean, validate and conform bronze into silver (quarantining bad rows)."""
+    from fintxn.audit import job_run
+    from fintxn.silver.job import run_silver
+
+    lake = _lake()
+    with job_run("silver", lake) as ctx:
+        _echo(run_silver(lake, ctx, full_refresh=full_refresh, run_gx_suite=not skip_gx))
+
+
 if __name__ == "__main__":
     app()

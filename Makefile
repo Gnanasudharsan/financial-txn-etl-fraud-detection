@@ -11,6 +11,7 @@ JAVA_HOME ?= $(shell /usr/libexec/java_home -v 17 2>/dev/null || echo /opt/homeb
 export JAVA_HOME
 export PYSPARK_PYTHON := $(CURDIR)/.venv/bin/python
 export PYTHONUNBUFFERED := 1
+export TZ := UTC
 
 UV := uv run
 CLI := $(UV) fintxn
