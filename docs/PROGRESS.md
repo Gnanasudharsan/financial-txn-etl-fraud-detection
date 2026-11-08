@@ -7,18 +7,22 @@
 | 2 – Bronze | ✅ done |
 | 3 – Silver | ✅ done |
 | 4 – Gold + features | ✅ done |
-| 5 – Model | ⏳ next |
-| 6 – Reconciliation | ☐ |
-| 7 – Security & audit | ☐ |
-| 8 – Orchestration & deploy | ☐ |
-| 9 – Dashboards | ☐ |
-| 10 – CI & polish | ☐ |
+| 5 – Model | ✅ done |
+| 6 – Reconciliation | ✅ done |
+| 7 – Security & audit | ✅ done |
+| 8 – Orchestration & deploy | ✅ done |
+| 9 – Dashboards | ✅ done |
+| 10 – CI & polish | ⏳ next |
 
 ## Next phase
-Phase 5 – LightGBM model, MLflow tracking/registry, batch scoring.
+Phase 10 – CI green on GitHub Actions, final polish.
 
 ## Open issues
-- MinIO images/binaries are no longer distributed; local S3 API is SeaweedFS (see DECISIONS.md, D-001).
+- MinIO images/binaries are no longer distributed; local S3 API is SeaweedFS (D-001).
+- Databricks deployment is prepared but not executed (needs the owner's workspace credentials);
+  see docs/DEPLOY_DATABRICKS.md.
+- Terraform is validated only; never applied.
+- Airflow image builds from `infra/airflow/Dockerfile` but was not run end to end (optional profile).
 
 ## Key results
 - Toolchain: Python 3.11.18, PySpark 3.5.9, delta-spark 3.3.3, Java 17.0.21, Terraform 1.17.1.
@@ -37,3 +41,11 @@ Phase 5 – LightGBM model, MLflow tracking/registry, batch scoring.
 - Gold @ 5M: 4,916,368 point-in-time feature rows (28 features), OPTIMIZE ZORDER BY card_token.
   Time split: train (Jan–Apr) 3,252,191 rows / 26,622 fraud · valid (May) 848,447 / 6,724 ·
   test (Jun) 815,730 / 6,520. 761.3 s wall clock. dq_health + dq_quarantine_by_reason marts.
+- Simulation v1 model (stage-by-stage run): test PR-AUC 0.9994, 12 FP -> judged too easy (D-011).
+- **Final end-to-end 5M run (simulation v2, SSE-S3 on), 25.1 min total:** generate 113.6 s ·
+  bronze 233.1 s · silver 572.8 s · gold 220.9 s · train 67.6 s · score 195.0 s · recon 85.7 s ·
+  export 18.8 s. Raw 5,035,743 → silver 4,914,725 valid + 121,018 quarantined (2.40%); GX 23/23.
+- Model v2 (June test): PR-AUC 0.9974, ROC-AUC 0.999959, recall 95.17%, precision 99.28%
+  (6,033 TP / 44 FP / 306 FN) at threshold 0.988015 tuned on May.
+- Recon: 4,922,108 records, 46,743 breaks, 99.99996% agreement with injected truth (2 of
+  4,914,701), 67.4 s incl. break report; est. 99.49% less time than a 220-min/day manual process.

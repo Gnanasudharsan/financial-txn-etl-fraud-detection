@@ -1,0 +1,97 @@
+{
+  "steps": {
+    "generate": {
+      "seconds": 113.6,
+      "rows_in": 0,
+      "rows_out": 5035743,
+      "rows_quarantined": 0,
+      "run_id": "82aeda106d9b4d57b630ae1d4bf548f4"
+    },
+    "bronze": {
+      "seconds": 233.1,
+      "rows_in": 14892311,
+      "rows_out": 14892311,
+      "rows_quarantined": 0,
+      "run_id": "f2a108fb78bb42119b173bdb26a0ffd3"
+    },
+    "silver": {
+      "seconds": 572.8,
+      "rows_in": 5035743,
+      "rows_out": 4914725,
+      "rows_quarantined": 121018,
+      "run_id": "5c33e6f527f949528aec9a729c659aea"
+    },
+    "gold": {
+      "seconds": 220.9,
+      "rows_in": 4914725,
+      "rows_out": 4914725,
+      "rows_quarantined": 0,
+      "run_id": "a24aef99db854b57ab79bc9456112d0e"
+    },
+    "train": {
+      "seconds": 67.6,
+      "rows_in": 4541314,
+      "rows_out": 0,
+      "rows_quarantined": 0,
+      "run_id": "6a46e09d6afe4b53aa9ae47957be6368"
+    },
+    "score": {
+      "seconds": 195.0,
+      "rows_in": 4914725,
+      "rows_out": 4914725,
+      "rows_quarantined": 0,
+      "run_id": "5bb71426ef624b809d36b836b20f68ed"
+    },
+    "recon": {
+      "seconds": 85.7,
+      "rows_in": 9817157,
+      "rows_out": 4922108,
+      "rows_quarantined": 0,
+      "run_id": "fbdf5c92541a40deb8bff79d359d1ea8"
+    },
+    "export": {
+      "seconds": 18.8,
+      "rows_in": 0,
+      "rows_out": 2142155,
+      "rows_quarantined": 0,
+      "run_id": "795cc56c8650483aa2458f248d58a03a"
+    }
+  },
+  "generation_counts": {
+    "bad_timestamp": 15054,
+    "bytes": 2391937714,
+    "clean_transactions": 4996406,
+    "corrupt_line": 2529,
+    "exact_duplicate": 24719,
+    "files": 1117,
+    "fraud_account_takeover": 5637,
+    "fraud_card_testing": 13110,
+    "fraud_high_amount_night": 4021,
+    "fraud_high_risk_mcc": 6889,
+    "fraud_transactions": 39411,
+    "fraud_velocity_burst": 9754,
+    "future_timestamp": 5059,
+    "invalid_currency": 9983,
+    "ledger_rows": 4914701,
+    "malformed_amount": 20103,
+    "near_duplicate": 14618,
+    "null_amount": 6028,
+    "null_card_number": 6034,
+    "null_currency": 6024,
+    "null_event_ts": 5951,
+    "null_merchant_id": 6010,
+    "raw_transaction_rows": 5035743,
+    "recon_amount_mismatch": 9850,
+    "recon_duplicate": 4913,
+    "recon_exact_match": 4102703,
+    "recon_missing_in_ledger": 2494,
+    "recon_missing_in_settlement": 19652,
+    "recon_timing": 9836,
+    "recon_tolerance_match": 772660,
+    "schema_drift_rows": 353905,
+    "settlement_missing_ref": 48878,
+    "settlement_rows": 4902456
+  },
+  "total_seconds": 1507.5,
+  "env": "local"
+}
