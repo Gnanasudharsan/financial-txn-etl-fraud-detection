@@ -32,6 +32,9 @@ HOUR_WEIGHTS = np.array(
 )  # fmt: skip
 NIGHT_WEIGHTS = np.roll(HOUR_WEIGHTS, 5)
 DOW_WEIGHTS = np.array([0.94, 0.95, 0.97, 1.0, 1.12, 1.10, 0.92])  # Mon..Sun
+VPN_SHARE = 0.03  # legit online txns geo-located away from home
+DOMESTIC_PROXY_SHARE = 0.4  # fraud originating from a domestic city / residential proxy
+HIJACKED_DEVICE_SHARE = 0.25  # account takeover through a stolen session on a known device
 
 CITY_OFFSET = np.array([CITY_UTC_OFFSET[c.name] for c in CITIES])
 CITY_LAT = np.array([c.lat for c in CITIES])
@@ -197,6 +200,16 @@ def simulate_legit(
     lon = np.where(is_onl, CITY_LON[home_city[cust]] + rng.normal(0, 0.08, n), m_lon)
     city = np.where(is_onl, CITY_NAME[home_city[cust]], merch_df["city"].to_numpy()[merch])
     country = np.where(is_onl, CITY_COUNTRY[home_city[cust]], merch_df["country"].to_numpy()[merch])
+    # Confounder: legitimate online sessions geo-located far from home (VPN, roaming, corporate
+    # proxies). They create the same "impossible travel" signal that account takeover does.
+    vpn = np.flatnonzero(is_onl & (rng.random(n) < VPN_SHARE))
+    if vpn.size:
+        far = rng.integers(0, len(CITIES), vpn.size)
+        lat[vpn] = CITY_LAT[far] + rng.normal(0, 0.08, vpn.size)
+        lon[vpn] = CITY_LON[far] + rng.normal(0, 0.08, vpn.size)
+        city[vpn] = CITY_NAME[far]
+        country[vpn] = CITY_COUNTRY[far]
+        ip[vpn] = _random_ip(rng, CITY_COUNTRY[far])
 
     card_present_mode = rng.choice(["CHIP", "CONTACTLESS", "SWIPE"], n, p=[0.55, 0.37, 0.08])
     entry = np.where(is_onl, "ECOM", np.where(is_atm, "CHIP", card_present_mode))
@@ -292,7 +305,10 @@ class _FraudBuilder:
         )
 
     def _fraud_origin(self) -> tuple[int, str, str]:
-        ci = int(self.rng.choice(FRAUD_CITY_IDX))
+        if self.rng.random() < DOMESTIC_PROXY_SHARE:
+            ci = int(self.rng.choice(US_CITY_IDX))
+        else:
+            ci = int(self.rng.choice(FRAUD_CITY_IDX))
         dev = str(_new_devices(self.rng, 1)[0])
         ip = str(_random_ip(self.rng, np.array([CITY_COUNTRY[ci]]))[0])
         return ci, dev, ip
@@ -343,6 +359,8 @@ class _FraudBuilder:
         r = self.rng
         card, cust = self._victim()
         ci, dev, ip = self._fraud_origin()
+        if r.random() < HIJACKED_DEVICE_SHARE:
+            dev = str(self.dims.customer_devices[cust, 0])
         t = self._start()
         for _ in range(int(r.integers(2, 7))):
             t += int(r.integers(600, 4 * 3600))
@@ -375,7 +393,7 @@ class _FraudBuilder:
                 card=card,
                 merch=self._merchant(("5541", "5732", "5311", "5944", "5999"), city=ci),
                 channel="POS",
-                entry="SWIPE",
+                entry=str(r.choice(["SWIPE", "CHIP", "CONTACTLESS"], p=[0.6, 0.25, 0.15])),
                 amount=r.lognormal(np.log(150), 0.8),
                 device=None,
                 ip=None,
