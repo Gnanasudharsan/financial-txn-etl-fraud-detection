@@ -13,10 +13,11 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import os
 
 from pyspark.sql import Column
 from pyspark.sql import functions as F
+
+from fintxn.secrets import get_secret
 
 BLOCK = 64
 PAN_REGEX = r"(?<![0-9])[0-9]{13,19}(?![0-9])"
@@ -27,7 +28,7 @@ class MissingKeyError(RuntimeError):
 
 
 def load_token_key(env_var: str = "FINTXN_TOKEN_KEY") -> bytes:
-    raw = os.environ.get(env_var, "")
+    raw = get_secret(env_var)
     if not raw:
         raise MissingKeyError(f"{env_var} is not set; run `make keys` or configure a secret scope")
     key = bytes.fromhex(raw)

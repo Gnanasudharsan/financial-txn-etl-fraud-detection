@@ -67,3 +67,14 @@ def test_spark_encrypt_decrypt_and_mask(spark) -> None:
     assert dec[0]["d"] == "jane.doe@gmail.com"
     with pytest.raises(AccessDeniedError):
         decrypt_col("email_enc", KEY, "email", role="analyst")
+
+
+@pytest.mark.spark
+def test_ciphertext_decrypts_with_spark_sql_aes_decrypt(spark) -> None:
+    """The Databricks secure view decrypts with built-in SQL; prove the format is compatible."""
+    token = encrypt_value("jane.doe@gmail.com", KEY, "email")
+    df = spark.createDataFrame([(token, base64.b64encode(KEY).decode())], "tok string, k string")
+    out = df.selectExpr(
+        "CAST(aes_decrypt(unbase64(substr(tok, 4)), unbase64(k), 'GCM', 'DEFAULT', 'email') AS STRING)"
+    ).first()[0]
+    assert out == "jane.doe@gmail.com"

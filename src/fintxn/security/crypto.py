@@ -18,6 +18,7 @@ from pyspark.sql import Column
 from pyspark.sql import functions as F
 from pyspark.sql.types import StringType
 
+from fintxn.secrets import get_secret
 from fintxn.security.tokenize import MissingKeyError
 
 KEY_VERSION = "v1"
@@ -32,7 +33,7 @@ class AccessDeniedError(PermissionError):
 
 
 def load_encryption_key(env_var: str = "FINTXN_ENCRYPTION_KEY") -> bytes:
-    raw = os.environ.get(env_var, "")
+    raw = get_secret(env_var)
     if not raw:
         raise MissingKeyError(f"{env_var} is not set; run `make keys` or configure a secret scope")
     key = base64.b64decode(raw)

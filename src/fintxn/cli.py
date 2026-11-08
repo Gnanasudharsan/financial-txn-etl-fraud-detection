@@ -147,5 +147,64 @@ def recon(
         _echo(run_recon(lake, ctx, Path(results_file) if results_file else None))
 
 
+@app.command("audit-log")
+def audit_log(limit: int = typer.Option(20, help="Most recent runs to show")) -> None:
+    """Show the most recent pipeline runs from the audit trail."""
+    from fintxn.audit import AUDIT_TABLE
+
+    lake = _lake()
+    lake.read("audit", AUDIT_TABLE).select(
+        "started_at", "job_name", "status", "duration_s", "rows_in", "rows_out",
+        "rows_quarantined", "dq_pass_rate", "git_sha", "run_id",
+    ).orderBy("started_at", ascending=False).show(limit, truncate=False)  # fmt: skip
+
+
+@app.command("time-travel")
+def time_travel(
+    run_id: str = typer.Argument(..., help="run_id from the audit trail"),
+) -> None:
+    """Show the exact Delta versions a past run wrote, and their row counts via time travel."""
+    from fintxn.audit import AUDIT_TABLE
+
+    lake = _lake()
+    row = lake.read("audit", AUDIT_TABLE).where(f"run_id = '{run_id}'").first()
+    if row is None:
+        raise typer.BadParameter(f"run_id {run_id} not found")
+    out = {}
+    for table, version in json.loads(row["tables_written"]).items():
+        layer, name = table.split(".", 1)
+        out[table] = {
+            "version": version,
+            "rows_at_version": lake.read(layer, name, version=version).count(),
+        }
+    _echo({"run_id": run_id, "job": row["job_name"], "git_sha": row["git_sha"], "tables": out})
+
+
+@app.command("pii-decrypt")
+def pii_decrypt(
+    customer_id: str = typer.Argument(..., help="Customer to reveal"),
+    role: str | None = typer.Option(None, help="Caller role (default $FINTXN_ROLE)"),
+    reason: str = typer.Option(..., help="Business justification, recorded in the audit trail"),
+) -> None:
+    """Decrypt one customer's PII. Allowed for auditor/data_engineer only; every call is audited."""
+    from fintxn.audit import job_run
+    from fintxn.security.crypto import decrypt_value, load_encryption_key, require_role
+
+    granted = require_role(role)
+    lake = _lake()
+    with job_run("pii_access", lake) as ctx:
+        ctx.metrics.update({"customer_id": customer_id, "role": granted, "reason": reason})
+        row = lake.read("silver", "customers").where(f"customer_id = '{customer_id}'").first()
+        if row is None:
+            raise typer.BadParameter(f"customer {customer_id} not found")
+        key = load_encryption_key()
+        fields = ("first_name", "last_name", "email", "phone", "date_of_birth")
+        _echo(
+            {"customer_id": customer_id}
+            | {f: decrypt_value(row[f"{f}_enc"], key, f) for f in fields}
+        )
+        ctx.rows_out = 1
+
+
 if __name__ == "__main__":
     app()
