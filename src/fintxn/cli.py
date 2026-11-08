@@ -130,5 +130,22 @@ def score() -> None:
         _echo(run_score(lake, ctx))
 
 
+@app.command()
+def recon(
+    results_file: str | None = typer.Option(
+        None, help="Write metrics JSON here (e.g. docs/results)"
+    ),
+) -> None:
+    """Reconcile the internal ledger against processor settlements."""
+    from pathlib import Path
+
+    from fintxn.audit import job_run
+    from fintxn.recon.job import run_recon
+
+    lake = _lake()
+    with job_run("recon", lake) as ctx:
+        _echo(run_recon(lake, ctx, Path(results_file) if results_file else None))
+
+
 if __name__ == "__main__":
     app()
