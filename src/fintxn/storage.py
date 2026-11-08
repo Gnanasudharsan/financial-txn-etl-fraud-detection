@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -20,8 +21,17 @@ if TYPE_CHECKING:
     from pyspark.sql import DataFrame, SparkSession
 
 
+@dataclass(frozen=True)
+class ObjectInfo:
+    key: str
+    size: int
+
+
 class ObjectStore(ABC):
     """Minimal blob interface for the raw landing zone."""
+
+    @abstractmethod
+    def list_objects(self, layer: str, prefix: str = "") -> list[ObjectInfo]: ...
 
     @abstractmethod
     def put_bytes(self, layer: str, key: str, data: bytes) -> None: ...
@@ -56,12 +66,19 @@ class LocalObjectStore(ObjectStore):
     def get_bytes(self, layer: str, key: str) -> bytes:
         return self._path(layer, key).read_bytes()
 
-    def list_keys(self, layer: str, prefix: str = "") -> list[str]:
+    def list_objects(self, layer: str, prefix: str = "") -> list[ObjectInfo]:
         base = self.root / layer
         if not base.exists():
             return []
-        keys = [str(p.relative_to(base)) for p in base.rglob("*") if p.is_file()]
-        return sorted(k for k in keys if k.startswith(prefix) and not Path(k).name.startswith("."))
+        out = [
+            ObjectInfo(str(p.relative_to(base)), p.stat().st_size)
+            for p in base.rglob("*")
+            if p.is_file() and not p.name.startswith(".")
+        ]
+        return sorted((o for o in out if o.key.startswith(prefix)), key=lambda o: o.key)
+
+    def list_keys(self, layer: str, prefix: str = "") -> list[str]:
+        return [o.key for o in self.list_objects(layer, prefix)]
 
     def uri(self, layer: str, key: str = "") -> str:
         return str(self._path(layer, key)).rstrip("/")
@@ -109,12 +126,15 @@ class S3ObjectStore(ObjectStore):
         body = self.client.get_object(Bucket=self.cfg.bucket(layer), Key=key)["Body"].read()
         return bytes(body)
 
-    def list_keys(self, layer: str, prefix: str = "") -> list[str]:
-        keys: list[str] = []
+    def list_objects(self, layer: str, prefix: str = "") -> list[ObjectInfo]:
+        out: list[ObjectInfo] = []
         paginator = self.client.get_paginator("list_objects_v2")
         for page in paginator.paginate(Bucket=self.cfg.bucket(layer), Prefix=prefix):
-            keys.extend(obj["Key"] for obj in page.get("Contents", []))
-        return sorted(keys)
+            out.extend(ObjectInfo(o["Key"], int(o["Size"])) for o in page.get("Contents", []))
+        return sorted(out, key=lambda o: o.key)
+
+    def list_keys(self, layer: str, prefix: str = "") -> list[str]:
+        return [o.key for o in self.list_objects(layer, prefix)]
 
     def uri(self, layer: str, key: str = "") -> str:
         return f"s3a://{self.cfg.bucket(layer)}/{key}".rstrip("/")
@@ -193,6 +213,7 @@ class Lake:
         replace_where: str | None = None,
         overwrite_schema: bool = False,
         merge_schema: bool = False,
+        options: dict[str, str] | None = None,
     ) -> int:
         """Write ``df`` as Delta and return the resulting table version."""
         writer = df.write.format("delta").mode(mode)
@@ -204,6 +225,8 @@ class Lake:
             writer = writer.option("overwriteSchema", "true")
         if merge_schema:
             writer = writer.option("mergeSchema", "true")
+        for k, v in (options or {}).items():
+            writer = writer.option(k, v)
         if self.uses_catalog:
             self.spark.sql(f"CREATE SCHEMA IF NOT EXISTS {self.schema_name(layer)}")
             writer.saveAsTable(self.ref(layer, name))
@@ -217,6 +240,10 @@ class Lake:
         if self.uses_catalog:
             return DeltaTable.forName(self.spark, self.ref(layer, name))
         return DeltaTable.forPath(self.spark, self.location(layer, name))
+
+    def last_operation_metrics(self, layer: str, name: str) -> dict[str, str]:
+        row = self.delta_table(layer, name).history(1).select("operationMetrics").first()
+        return dict(row["operationMetrics"] or {}) if row else {}
 
     def version(self, layer: str, name: str) -> int:
         row = self.delta_table(layer, name).history(1).select("version").first()
