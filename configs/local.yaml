@@ -1,0 +1,6 @@
+# Laptop: SeaweedFS (S3 API) in Docker, Spark local[*].
+storage:
+  backend: s3
+  endpoint: ${S3_ENDPOINT:-http://localhost:8333}
+spark:
+  shuffle_partitions: 64

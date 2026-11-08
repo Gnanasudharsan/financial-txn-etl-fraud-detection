@@ -1,0 +1,14 @@
+# Real AWS S3 (buckets provisioned by infra/terraform). Credentials come from the default AWS
+# provider chain (profile / SSO / instance role) unless S3_ACCESS_KEY is set.
+storage:
+  backend: s3
+  endpoint: ${S3_ENDPOINT:-https://s3.us-east-1.amazonaws.com}
+  region: ${S3_REGION:-us-east-1}
+  path_style: false
+  ssl: true
+  sse: aws:kms
+  kms_key_id: ${FINTXN_KMS_KEY_ARN}
+  bucket_prefix: ${FINTXN_BUCKET_PREFIX:-fintxn}
+spark:
+  extra_conf:
+    spark.hadoop.fs.s3a.aws.credentials.provider: com.amazonaws.auth.DefaultAWSCredentialsProviderChain

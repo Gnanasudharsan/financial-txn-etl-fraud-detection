@@ -1,0 +1,86 @@
+[project]
+name = "fintxn"
+version = "0.1.0"
+description = "Cloud-native lakehouse ETL & fraud detection for banking transactions (PySpark, Delta Lake, LightGBM, MLflow)."
+authors = [{ name = "Gnanasudharsan" }]
+license = { text = "MIT" }
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "pyspark==3.5.9",
+    "delta-spark==3.3.3",
+    "pyarrow==19.0.1",
+    "pandas==2.2.3",
+    "numpy==2.2.6",
+    "faker==37.1.0",
+    "boto3==1.37.38",
+    "pydantic==2.11.4",
+    "pyyaml==6.0.2",
+    "typer==0.15.3",
+    "cryptography==44.0.3",
+    "great-expectations==1.24.1",
+    "lightgbm==4.6.0",
+    "scikit-learn==1.6.1",
+    "mlflow==2.22.0",
+    "matplotlib==3.10.1",
+    "python-dotenv==1.1.0",
+]
+
+[project.optional-dependencies]
+dashboard = ["streamlit==1.45.0", "plotly==6.0.1"]
+
+[dependency-groups]
+dev = [
+    "pytest==8.3.5",
+    "pytest-cov==6.1.1",
+    "chispa==0.11.1",
+    "ruff==0.11.8",
+    "mypy==1.15.0",
+    "pre-commit==4.2.0",
+    "types-pyyaml==6.0.12.20250402",
+    "boto3-stubs[s3]==1.37.38",
+]
+
+[project.scripts]
+fintxn = "fintxn.cli:app"
+
+[build-system]
+requires = ["uv_build>=0.13.7,<0.14.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "RUF", "PL"]
+ignore = ["PLR0913", "PLR2004", "PLR0915", "PLR0912", "N812", "RUF012"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["PLR", "N802", "N803"]
+"dashboards/**" = ["N999"]
+"dags/**" = ["N999"]
+
+[tool.mypy]
+python_version = "3.11"
+packages = ["fintxn"]
+mypy_path = "src"
+strict = true
+warn_unused_ignores = false
+ignore_missing_imports = true
+disallow_untyped_calls = false
+disallow_any_generics = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = ["spark: tests that start a local SparkSession", "integration: end-to-end pipeline tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.coverage.run]
+source = ["fintxn"]
+omit = ["src/fintxn/cli.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true

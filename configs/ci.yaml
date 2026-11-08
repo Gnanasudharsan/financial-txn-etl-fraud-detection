@@ -1,0 +1,21 @@
+# CI / unit tests: local filesystem, 10k transactions, tiny dimensions.
+storage:
+  backend: local
+  local_root: ${FINTXN_LOCAL_ROOT:-data/ci}
+spark:
+  master: local[2]
+  driver_memory: 2g
+  shuffle_partitions: 4
+  extra_conf:
+    spark.ui.enabled: "false"
+    spark.sql.adaptive.coalescePartitions.initialPartitionNum: "4"
+data:
+  n_transactions: 10000
+  n_customers: 500
+  n_cards: 900
+  n_merchants: 300
+model:
+  num_boost_round: 80
+  early_stopping_rounds: 20
+mlflow:
+  tracking_uri: ${MLFLOW_TRACKING_URI:-sqlite:///data/ci/mlflow.db}

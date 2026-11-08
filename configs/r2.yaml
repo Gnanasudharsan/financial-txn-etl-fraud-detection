@@ -1,0 +1,9 @@
+# Cloudflare R2 (S3-compatible, free tier: 10 GB). Same code, different endpoint.
+storage:
+  backend: s3
+  endpoint: https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com
+  region: auto
+  path_style: true
+  ssl: true
+  sse: none        # R2 encrypts all objects at rest by default
+  bucket_prefix: ${FINTXN_BUCKET_PREFIX:-fintxn}

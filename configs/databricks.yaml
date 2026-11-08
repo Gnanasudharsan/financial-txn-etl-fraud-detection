@@ -1,0 +1,16 @@
+# Databricks Free Edition: Unity Catalog managed tables + a UC Volume for raw landing files.
+# Free Edition quotas: keep the dataset small (FINTXN_N_TXNS, default 500k).
+storage:
+  backend: databricks
+  catalog: ${FINTXN_CATALOG:-workspace}
+  schema_prefix: fintxn
+  volume_path: /Volumes/${FINTXN_CATALOG:-workspace}/fintxn_raw/landing
+data:
+  n_transactions: ${FINTXN_N_TXNS:-500000}
+  n_customers: 10000
+  n_cards: 20000
+  n_merchants: 4000
+mlflow:
+  tracking_uri: databricks
+  experiment: /Shared/fintxn-fraud
+  model_name: ${FINTXN_CATALOG:-workspace}.fintxn_gold.fintxn_fraud_lgbm

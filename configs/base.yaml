@@ -1,0 +1,37 @@
+# Base configuration shared by every environment. Environment files deep-merge over this.
+storage:
+  backend: s3
+  endpoint: ${S3_ENDPOINT:-http://localhost:8333}
+  region: ${S3_REGION:-us-east-1}
+  access_key: ${S3_ACCESS_KEY}
+  secret_key: ${S3_SECRET_KEY}
+  path_style: true
+  ssl: false
+  sse: none
+  bucket_prefix: fintxn
+
+spark:
+  master: local[*]
+  driver_memory: 6g
+  shuffle_partitions: 64
+
+data:
+  n_transactions: 5000000
+  n_customers: 50000
+  n_cards: 100000
+  n_merchants: 20000
+  start_date: 2026-01-01
+  days: 181
+  seed: 42
+  chunk_days: 7
+
+model:
+  train_end: 2026-05-01   # train:  Jan-Apr
+  valid_end: 2026-06-01   # valid:  May, test: Jun
+  target_recall: 0.95
+  label_delay_days: 7
+
+mlflow:
+  tracking_uri: ${MLFLOW_TRACKING_URI:-sqlite:///mlflow.db}
+  experiment: fintxn-fraud
+  model_name: fintxn_fraud_lgbm

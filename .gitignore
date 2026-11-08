@@ -1,0 +1,54 @@
+# Python / tooling
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+infra/seaweedfs/s3.json
+
+# Generated data & engine state (never committed)
+data/
+mlruns/
+mlartifacts/
+mlflow.db
+*.parquet
+*.delta
+spark-warehouse/
+metastore_db/
+derby.log
+artifacts/
+# Only small, aggregated, PII-free exports for the dashboard are committed
+!dashboards/data/
+!dashboards/data/*.parquet
+
+# Terraform
+infra/terraform/.terraform/
+infra/terraform/*.tfstate*
+infra/terraform/*.tfvars
+!infra/terraform/*.tfvars.example
+
+# Databricks
+.databricks/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+
+# Assistant files
+CLAUDE.md
+.claude/
