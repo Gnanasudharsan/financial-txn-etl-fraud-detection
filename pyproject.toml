@@ -23,6 +23,7 @@ dependencies = [
     "mlflow==2.22.0",
     "matplotlib==3.10.1",
     "python-dotenv==1.1.0",
+    "sqlalchemy==2.0.57",  # MLflow 2.22 is incompatible with SQLAlchemy 2.1
 ]
 
 [project.optional-dependencies]
@@ -54,11 +55,11 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "RUF", "PL"]
-ignore = ["PLR0913", "PLR2004", "PLR0915", "PLR0912", "N812", "RUF012"]
+ignore = ["PLR0913", "PLR2004", "PLR0915", "PLR0912", "N812", "RUF012", "N806"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["PLR", "N802", "N803"]
-"dashboards/**" = ["N999"]
+"tests/**" = ["PLR", "N802", "N803", "N817", "RUF007", "E501"]
+"dashboards/**" = ["N999", "RUF001"]
 "dags/**" = ["N999"]
 
 [tool.mypy]

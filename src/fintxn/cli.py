@@ -102,5 +102,33 @@ def gold() -> None:
         _echo(run_gold(lake, ctx))
 
 
+@app.command()
+def train(
+    results_file: str | None = typer.Option(
+        None, help="Write metrics JSON here (e.g. docs/results)"
+    ),
+) -> None:
+    """Train LightGBM on the time-based split; log and register the model in MLflow."""
+    from pathlib import Path
+
+    from fintxn.audit import job_run
+    from fintxn.ml.train import run_train
+
+    lake = _lake()
+    with job_run("train", lake) as ctx:
+        _echo(run_train(lake, ctx, Path(results_file) if results_file else None))
+
+
+@app.command()
+def score() -> None:
+    """Batch-score all transactions with the champion model and build scored marts."""
+    from fintxn.audit import job_run
+    from fintxn.ml.score import run_score
+
+    lake = _lake()
+    with job_run("score", lake) as ctx:
+        _echo(run_score(lake, ctx))
+
+
 if __name__ == "__main__":
     app()

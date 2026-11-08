@@ -17,7 +17,7 @@ UV := uv run
 CLI := $(UV) fintxn
 ROWS_FLAG := $(if $(ROWS),--rows $(ROWS),)
 
-.PHONY: help setup up down generate bronze silver gold train score recon export pipeline \
+.PHONY: mlflow-ui help setup up down generate bronze silver gold train score recon export pipeline \
         dashboard test test-fast lint fmt typecheck clean clean-data keys tf-fmt tf-validate \
         airflow-up airflow-down audit
 
@@ -53,13 +53,13 @@ gold: ## Silver -> point-in-time features + gold marts
 	$(CLI) gold
 
 train: ## Train LightGBM, log + register in MLflow
-	$(CLI) train
+	$(CLI) train $(if $(filter local,$(ENV)),--results-file docs/results/model_metrics.json,)
 
 score: ## Batch-score transactions and build scored marts
 	$(CLI) score
 
 recon: ## Ledger vs settlement reconciliation
-	$(CLI) recon
+	$(CLI) recon $(if $(filter local,$(ENV)),--results-file docs/results/recon_metrics.json,)
 
 export: ## Export compact gold marts for Streamlit / Power BI
 	$(CLI) export
@@ -68,7 +68,10 @@ audit: ## Print the pipeline audit trail
 	$(CLI) audit-log
 
 pipeline: ## Full pipeline end to end
-	$(CLI) pipeline $(ROWS_FLAG)
+	$(CLI) pipeline $(ROWS_FLAG) $(if $(filter local,$(ENV)),--results-dir docs/results,)
+
+mlflow-ui: ## Browse MLflow runs and the model registry on http://localhost:5000
+	$(UV) mlflow ui --backend-store-uri sqlite:///mlflow.db --port 5000
 
 dashboard: ## Run the Streamlit dashboard
 	$(UV) streamlit run dashboards/app.py

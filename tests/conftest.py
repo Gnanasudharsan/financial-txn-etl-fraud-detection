@@ -77,3 +77,30 @@ def silver_result(lake, bronze_result):
 
     with job_run("silver", lake) as ctx:
         return run_silver(lake, ctx)
+
+
+@pytest.fixture(scope="session")
+def gold_result(lake, silver_result):
+    from fintxn.audit import job_run
+    from fintxn.gold.job import run_gold
+
+    with job_run("gold", lake) as ctx:
+        return run_gold(lake, ctx)
+
+
+@pytest.fixture(scope="session")
+def train_result(lake, gold_result):
+    from fintxn.audit import job_run
+    from fintxn.ml.train import run_train
+
+    with job_run("train", lake) as ctx:
+        return run_train(lake, ctx)
+
+
+@pytest.fixture(scope="session")
+def score_result(lake, train_result):
+    from fintxn.audit import job_run
+    from fintxn.ml.score import run_score
+
+    with job_run("score", lake) as ctx:
+        return run_score(lake, ctx)
