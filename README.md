@@ -19,7 +19,7 @@ RBAC, encryption, and a full audit trail. Runs at $0 on a laptop or on Databrick
 
 **Case study site: [ledgerline-seven-self.vercel.app](https://ledgerline-seven-self.vercel.app)** covers the
 pipeline, the design decisions, and every measured result, with interactive charts. It's a static site in
-[`site/`](site/), and its numbers come from `scripts/build_site_data.py` (`make site-data`, then `make site` to preview).
+[`site/`](site/), and its numbers come from `scripts/build_site_data.py` (`make site-data`, then `make site` to preview). Pushes to `main` that touch `site/` redeploy it automatically.
 
 ## Measured results
 
