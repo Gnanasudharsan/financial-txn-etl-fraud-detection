@@ -6,8 +6,8 @@
 | 1 – Data generator | ✅ done |
 | 2 – Bronze | ✅ done |
 | 3 – Silver | ✅ done |
-| 4 – Gold + features | ⏳ next |
-| 5 – Model | ☐ |
+| 4 – Gold + features | ✅ done |
+| 5 – Model | ⏳ next |
 | 6 – Reconciliation | ☐ |
 | 7 – Security & audit | ☐ |
 | 8 – Orchestration & deploy | ☐ |
@@ -15,7 +15,7 @@
 | 10 – CI & polish | ☐ |
 
 ## Next phase
-Phase 4 – gold point-in-time features and DQ marts.
+Phase 5 – LightGBM model, MLflow tracking/registry, batch scoring.
 
 ## Open issues
 - MinIO images/binaries are no longer distributed; local S3 API is SeaweedFS (see DECISIONS.md, D-001).
@@ -34,3 +34,6 @@ Phase 4 – gold point-in-time features and DQ marts.
   NULL_CARD 6,025 · NULL_EVENT_TS 6,003 · NULL_CURRENCY 5,981 · NULL_MERCHANT 5,953 ·
   TS_FUTURE 4,904 · AMOUNT_NON_POSITIVE 2,519 · CORRUPT_RECORD 2,489 (= injected corrupt lines).
   GX suite: 23/23 expectations passed. 869.2 s wall clock (incl. GX scans over s3a).
+- Gold @ 5M: 4,916,368 point-in-time feature rows (28 features), OPTIMIZE ZORDER BY card_token.
+  Time split: train (Jan–Apr) 3,252,191 rows / 26,622 fraud · valid (May) 848,447 / 6,724 ·
+  test (Jun) 815,730 / 6,520. 761.3 s wall clock. dq_health + dq_quarantine_by_reason marts.
