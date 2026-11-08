@@ -9,7 +9,12 @@ import typer
 from fintxn.config import load_settings
 from fintxn.logging import get_logger
 
-app = typer.Typer(add_completion=False, no_args_is_help=True, help="Financial transaction ETL")
+app = typer.Typer(
+    add_completion=False,
+    no_args_is_help=True,
+    pretty_exceptions_enable=False,
+    help="Financial transaction ETL",
+)
 log = get_logger("fintxn.cli")
 
 
@@ -22,6 +27,25 @@ def info() -> None:
         if dumped["storage"].get(key):
             dumped["storage"][key] = "***"
     typer.echo(json.dumps(dumped, indent=2))
+
+
+@app.command()
+def generate(
+    rows: int | None = typer.Option(None, help="Number of transactions (default from config)"),
+    chunk_from: int | None = typer.Option(None, help="First chunk index (incremental demo)"),
+    chunk_to: int | None = typer.Option(None, help="Last chunk index (inclusive)"),
+    append: bool = typer.Option(False, help="Keep existing raw files (incremental loads)"),
+) -> None:
+    """Generate synthetic transactions, dimensions, labels, ledger and settlements."""
+    from fintxn.generate.runner import chunk_windows, run_generation
+
+    s = load_settings()
+    chunks = None
+    if chunk_from is not None or chunk_to is not None:
+        last = len(chunk_windows(s.data)) - 1
+        chunks = (chunk_from or 0, last if chunk_to is None else chunk_to)
+    manifest = run_generation(s, rows=rows, chunks=chunks, clean=not append)
+    typer.echo(json.dumps({k: v for k, v in manifest.items() if k != "counts"}, indent=2))
 
 
 if __name__ == "__main__":

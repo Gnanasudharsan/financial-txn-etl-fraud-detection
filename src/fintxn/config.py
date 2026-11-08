@@ -66,11 +66,11 @@ class SparkConfig(BaseModel):
 class FraudConfig(BaseModel):
     """Episode counts are expressed per 1M legitimate transactions so they scale with N."""
 
-    card_testing_per_m: int = 260
-    account_takeover_per_m: int = 330
-    velocity_burst_per_m: int = 260
-    high_amount_night_per_m: int = 900
-    high_risk_mcc_per_m: int = 800
+    card_testing_per_m: int = 200
+    account_takeover_per_m: int = 300
+    velocity_burst_per_m: int = 200
+    high_amount_night_per_m: int = 800
+    high_risk_mcc_per_m: int = 700
 
 
 class DirtyConfig(BaseModel):
