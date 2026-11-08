@@ -91,5 +91,16 @@ def silver(
         _echo(run_silver(lake, ctx, full_refresh=full_refresh, run_gx_suite=not skip_gx))
 
 
+@app.command()
+def gold() -> None:
+    """Build point-in-time fraud features and data-quality marts."""
+    from fintxn.audit import job_run
+    from fintxn.gold.job import run_gold
+
+    lake = _lake()
+    with job_run("gold", lake) as ctx:
+        _echo(run_gold(lake, ctx))
+
+
 if __name__ == "__main__":
     app()
