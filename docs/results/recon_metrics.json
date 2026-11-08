@@ -1,0 +1,28 @@
+{
+  "ledger_rows": 4914701,
+  "settlement_rows": 4902456,
+  "by_category": {
+    "exact_match": 4102703,
+    "tolerance_match": 772662,
+    "missing_in_settlement": 19652,
+    "timing": 9836,
+    "amount_mismatch": 9848,
+    "duplicate": 4913,
+    "missing_in_ledger": 2494
+  },
+  "breaks": 46743,
+  "match_and_publish_seconds": 66.0,
+  "total_seconds_incl_report": 67.4,
+  "report_file": "data/exports/recon/recon_breaks_fbdf5c92.csv",
+  "truth_compared": 4914701,
+  "ledger_side_correct": 4914699,
+  "accuracy_vs_truth": 0.9999995930576449,
+  "misclassified": {
+    "amount_mismatch->tolerance_match": 2
+  },
+  "orphans_expected": 2494,
+  "orphans_found": 2494,
+  "orphans_exact_set_match": true,
+  "duplicates_expected": 4913,
+  "duplicates_found": 4913
+}
