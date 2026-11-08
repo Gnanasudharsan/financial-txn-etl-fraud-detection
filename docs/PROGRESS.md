@@ -12,10 +12,10 @@
 | 7 – Security & audit | ✅ done |
 | 8 – Orchestration & deploy | ✅ done |
 | 9 – Dashboards | ✅ done |
-| 10 – CI & polish | ⏳ next |
+| 10 – CI & polish | ✅ done |
 
 ## Next phase
-Phase 10 – CI green on GitHub Actions, final polish.
+All phases complete. Optional next steps: deploy to Databricks Free Edition and Streamlit Community Cloud (owner credentials needed).
 
 ## Open issues
 - MinIO images/binaries are no longer distributed; local S3 API is SeaweedFS (D-001).
@@ -49,3 +49,5 @@ Phase 10 – CI green on GitHub Actions, final polish.
   (6,033 TP / 44 FP / 306 FN) at threshold 0.988015 tuned on May.
 - Recon: 4,922,108 records, 46,743 breaks, 99.99996% agreement with injected truth (2 of
   4,914,701), 67.4 s incl. break report; est. 99.49% less time than a 220-min/day manual process.
+- CI (GitHub Actions) green on first run: lint + mypy, 71 tests on the 10k-row pipeline (overall
+  coverage 92%, transform modules 98% vs a 70% gate), terraform fmt/validate.
