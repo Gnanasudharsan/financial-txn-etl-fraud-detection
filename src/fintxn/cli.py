@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import json
+from typing import TYPE_CHECKING
 
 import typer
 
 from fintxn.config import load_settings
 from fintxn.logging import get_logger
+
+if TYPE_CHECKING:
+    from fintxn.storage import Lake
 
 app = typer.Typer(
     add_completion=False,
@@ -46,6 +50,31 @@ def generate(
         chunks = (chunk_from or 0, last if chunk_to is None else chunk_to)
     manifest = run_generation(s, rows=rows, chunks=chunks, clean=not append)
     typer.echo(json.dumps({k: v for k, v in manifest.items() if k != "counts"}, indent=2))
+
+
+def _lake() -> Lake:
+    from fintxn.spark import get_spark
+    from fintxn.storage import Lake
+
+    s = load_settings()
+    return Lake(get_spark(s), s)
+
+
+def _echo(obj: object) -> None:
+    typer.echo(json.dumps(obj, indent=2, default=str))
+
+
+@app.command()
+def bronze(
+    full_refresh: bool = typer.Option(False, help="Re-ingest every raw file (overwrite bronze)"),
+) -> None:
+    """Ingest new raw files into bronze Delta tables."""
+    from fintxn.audit import job_run
+    from fintxn.bronze.ingest import run_bronze
+
+    lake = _lake()
+    with job_run("bronze", lake) as ctx:
+        _echo(run_bronze(lake, ctx, full_refresh=full_refresh))
 
 
 if __name__ == "__main__":
