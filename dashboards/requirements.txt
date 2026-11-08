@@ -1,0 +1,5 @@
+# Streamlit Community Cloud dependencies (entrypoint: dashboards/app.py)
+streamlit==1.45.0
+plotly==6.0.1
+pandas==2.2.3
+pyarrow==19.0.1
