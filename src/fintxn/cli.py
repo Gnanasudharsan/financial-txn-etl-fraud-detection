@@ -171,6 +171,33 @@ def recon(
         _echo(run_recon(lake, ctx, Path(results_file) if results_file else None))
 
 
+@app.command()
+def export() -> None:
+    """Export compact gold marts for Streamlit and Power BI."""
+    from fintxn.audit import job_run
+    from fintxn.export.exports import run_export
+
+    lake = _lake()
+    with job_run("export", lake) as ctx:
+        _echo(run_export(lake, ctx))
+
+
+@app.command()
+def pipeline(
+    rows: int | None = typer.Option(None, help="Number of transactions (default from config)"),
+    results_dir: str | None = typer.Option(None, help="Write run metrics JSON files here"),
+) -> None:
+    """Run every stage end to end (full refresh), each audited separately."""
+    from pathlib import Path
+
+    from fintxn.pipeline import run_pipeline
+
+    report = run_pipeline(
+        _lake(), rows=rows, results_dir=Path(results_dir) if results_dir else None
+    )
+    _echo(report["steps"] | {"total_seconds": report["total_seconds"]})
+
+
 @app.command("audit-log")
 def audit_log(limit: int = typer.Option(20, help="Most recent runs to show")) -> None:
     """Show the most recent pipeline runs from the audit trail."""
